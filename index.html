@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Location Tracker</title>
+    
+    <!-- Leaflet CSS (For the Map) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <style>
+        body { margin: 0; padding: 0; font-family: sans-serif; }
+        #map { height: 100vh; width: 100%; }
+        
+        #controls {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        button:hover { background-color: #0056b3; }
+        
+        #status { margin-top: 10px; font-size: 14px; color: #555; }
+    </style>
+</head>
+<body>
+
+    <div id="controls">
+        <h3>📍 Location Tracker</h3>
+        <button onclick="startTracking()">Start Tracking</button>
+        <button onclick="stopTracking()" style="background-color: #dc3545;">Stop</button>
+        <div id="status">Status: Idle</div>
+    </div>
+
+    <div id="map"></div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+        // 1. Initialize the Map
+        // We start with a default view (London)
+        var map = L.map( map ).setView([51.505, -0.09], 13);
+
+        // Add OpenStreetMap tiles (Free map data)
+        L.tileLayer( https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png , {
+            attribution:  &copy; OpenStreetMap contributors 
+        }).addTo(map);
+
+        var marker;
+        var watchId;
+        var isTracking = false;
+
+        // 2. Function to Start Tracking
+        function startTracking() {
+            if (!navigator.geolocation) {
+                alert("Geolocation is not supported by your browser");
+                return;
+            }
+
+            isTracking = true;
+            document.getElementById( status ).innerText = "Status: Tracking...";
+
+            // Watch the user s position (updates continuously)
+            watchId = navigator.geolocation.watchPosition(updatePosition, handleError, {
+                enableHighAccuracy: true,
+                timeout: 5000,
+                maximumAge: 0
+            });
+        }
+
+        // 3. Function to Stop Tracking
+        function stopTracking() {
+            isTracking = false;
+            document.getElementById( status ).innerText = "Status: Stopped";
+            if (watchId) {
+                navigator.geolocation.clearWatch(watchId);
+            }
+        }
+
+        // 4. Update the Map Marker
+        function updatePosition(position) {
+            var lat = position.coords.latitude;
+            var lng = position.coords.longitude;
+            var accuracy = position.coords.accuracy;
+
+            var newLatLng = new L.LatLng(lat, lng);
+
+            // If marker doesn t exist, create it
+            if (!marker) {
+                marker = L.marker(newLatLng).addTo(map)
+                    .bindPopup("You are here!").openPopup();
+            } else {
+                // Move existing marker
+                marker.setLatLng(newLatLng);
+            }
+
+            // Pan the map to follow the user
+            map.panTo(newLatLng);
+
+            // Log to console (In a real app, you would send this to a server)
+            console.log(`Lat: ${lat}, Lng: ${lng}, Accuracy: ${accuracy}m`);
+        }
+
+        function handleError(error) {
+            console.warn(`ERROR(${error.code}): ${error.message}`);
+            document.getElementById( status ).innerText = "Status: Error getting location";
+        }
+    </script>
+</body>
+</html>
